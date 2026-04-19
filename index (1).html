@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor de Productos</title>
+  <style>
+    :root{
+      --bg-1:#0f172a;
+      --bg-2:#1e3a8a;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --primary:#2563eb;
+      --primary-hover:#1d4ed8;
+      --danger:#ef4444;
+      --danger-hover:#dc2626;
+      --success:#16a34a;
+      --border:#e2e8f0;
+      --shadow:0 18px 45px rgba(15, 23, 42, .16);
+      --radius:22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color:#fff;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,.35), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(14,165,233,.30), transparent 20%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      min-height:100vh;
+    }
+
+    .page{
+      width:min(1180px, calc(100% - 32px));
+      margin:0 auto;
+      padding:32px 0 48px;
+    }
+
+    .hero{
+      text-align:center;
+      margin-bottom:28px;
+    }
+
+    .hero h1{
+      margin:0 0 10px;
+      font-size:clamp(2rem, 5vw, 3.2rem);
+      line-height:1.05;
+    }
+
+    .hero p{
+      margin:0 auto;
+      max-width:760px;
+      color:rgba(255,255,255,.82);
+      font-size:1rem;
+      line-height:1.6;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:24px;
+      align-items:start;
+    }
+
+    .panel{
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.16);
+      backdrop-filter: blur(10px);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .form-card{
+      padding:22px;
+      position:sticky;
+      top:20px;
+    }
+
+    .section-title{
+      margin:0 0 6px;
+      font-size:1.45rem;
+    }
+
+    .section-subtitle{
+      margin:0 0 18px;
+      color:rgba(255,255,255,.82);
+      font-size:.96rem;
+      line-height:1.5;
+    }
+
+    .field{
+      margin-bottom:14px;
+    }
+
+    .field label{
+      display:block;
+      font-weight:700;
+      margin-bottom:7px;
+      font-size:.95rem;
+    }
+
+    .field input,
+    .field textarea{
+      width:100%;
+      border:none;
+      outline:none;
+      border-radius:16px;
+      padding:13px 14px;
+      background:#fff;
+      color:var(--text);
+      font-size:.96rem;
+      border:2px solid transparent;
+      transition:.2s ease;
+    }
+
+    .field input:focus,
+    .field textarea:focus{
+      border-color:#93c5fd;
+      box-shadow:0 0 0 4px rgba(147,197,253,.22);
+    }
+
+    .field textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    .helper{
+      margin-top:6px;
+      color:rgba(255,255,255,.74);
+      font-size:.83rem;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      cursor:pointer;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:700;
+      font-size:.96rem;
+      transition:transform .15s ease, opacity .15s ease, background .2s ease;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+    }
+
+    .btn-primary{
+      background:var(--primary);
+      color:#fff;
+      flex:1;
+    }
+
+    .btn-primary:hover{ background:var(--primary-hover); }
+
+    .btn-secondary{
+      background:#e2e8f0;
+      color:#0f172a;
+    }
+
+    .btn-danger{
+      background:var(--danger);
+      color:#fff;
+      width:100%;
+      margin-top:12px;
+    }
+
+    .btn-danger:hover{ background:var(--danger-hover); }
+
+    .content{
+      min-height:520px;
+      padding:20px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.18);
+      font-size:.92rem;
+      color:#fff;
+    }
+
+    .message{
+      display:none;
+      margin-bottom:16px;
+      padding:14px 16px;
+      border-radius:16px;
+      font-weight:700;
+      line-height:1.45;
+    }
+
+    .message.show{ display:block; }
+
+    .message.success{
+      background:rgba(22,163,74,.18);
+      border:1px solid rgba(34,197,94,.35);
+      color:#dcfce7;
+    }
+
+    .message.error{
+      background:rgba(239,68,68,.18);
+      border:1px solid rgba(248,113,113,.35);
+      color:#fee2e2;
+    }
+
+    .products-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+      gap:18px;
+    }
+
+    .product-card{
+      background:var(--card);
+      color:var(--text);
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .16);
+      display:flex;
+      flex-direction:column;
+      min-height:100%;
+    }
+
+    .product-image{
+      width:100%;
+      height:220px;
+      object-fit:cover;
+      background:#e2e8f0;
+    }
+
+    .product-body{
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      flex:1;
+    }
+
+    .product-title{
+      margin:0;
+      font-size:1.12rem;
+      line-height:1.3;
+    }
+
+    .product-description{
+      margin:0;
+      color:var(--muted);
+      line-height:1.55;
+      font-size:.95rem;
+      flex:1;
+    }
+
+    .price-box{
+      display:grid;
+      gap:4px;
+      background:#f8fafc;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px;
+    }
+
+    .price-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      font-size:.95rem;
+    }
+
+    .old-price{
+      text-decoration:line-through;
+      color:#94a3b8;
+    }
+
+    .final-price{
+      font-size:1.18rem;
+      color:var(--success);
+      font-weight:700;
+    }
+
+    .coupon-tag{
+      align-self:flex-start;
+      padding:7px 10px;
+      border-radius:999px;
+      background:#dbeafe;
+      color:#1d4ed8;
+      font-size:.8rem;
+      font-weight:700;
+    }
+
+    .empty-state{
+      background:rgba(255,255,255,.10);
+      border:1px dashed rgba(255,255,255,.26);
+      border-radius:20px;
+      min-height:360px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:24px;
+    }
+
+    .empty-state h3{
+      margin:0 0 8px;
+      font-size:1.35rem;
+    }
+
+    .empty-state p{
+      margin:0;
+      color:rgba(255,255,255,.8);
+      line-height:1.6;
+      max-width:420px;
+    }
+
+    .footer-note{
+      margin-top:20px;
+      color:rgba(255,255,255,.8);
+      font-size:.9rem;
+      text-align:center;
+      line-height:1.55;
+    }
+
+    @media (max-width: 960px){
+      .layout{
+        grid-template-columns:1fr;
+      }
+
+      .form-card{
+        position:static;
+      }
+    }
+
+    @media (max-width: 560px){
+      .page{
+        width:min(100% - 20px, 1180px);
+        padding-top:20px;
+      }
+
+      .content, .form-card{
+        padding:16px;
+      }
+
+      .product-image{
+        height:200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>Gestor de Productos</h1>
+      <p>
+        Crea tarjetas de productos de forma visual, aplica descuentos con cupón y elimina tarjetas directamente desde la pantalla.
+      </p>
+    </section>
+
+    <section class="layout">
+      <aside class="panel form-card">
+        <h2 class="section-title">Nuevo producto</h2>
+        <p class="section-subtitle">
+          Completa el formulario y presiona <strong>Guardar producto</strong>.
+          Usa el cupón <strong>DESC50</strong> para aplicar un 50% de descuento.
+        </p>
+
+        <form id="productForm">
+          <div class="field">
+            <label for="imageUrl">Imagen (URL)</label>
+            <input type="url" id="imageUrl" placeholder="https://ejemplo.com/imagen.jpg" />
+            <p class="helper">Pega un enlace válido de imagen.</p>
+          </div>
+
+          <div class="field">
+            <label for="title">Título</label>
+            <input type="text" id="title" placeholder="Ej. Audífonos inalámbricos" />
+          </div>
+
+          <div class="field">
+            <label for="description">Descripción</label>
+            <textarea id="description" placeholder="Describe brevemente el producto..."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="price">Valor</label>
+            <input type="number" id="price" min="0" step="0.01" placeholder="Ej. 199900" />
+          </div>
+
+          <div class="field">
+            <label for="coupon">Cupón</label>
+            <input type="text" id="coupon" placeholder="Ej. DESC50" />
+            <p class="helper">Solo el cupón DESC50 activa el descuento.</p>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn-primary">Guardar producto</button>
+            <button type="button" class="btn-secondary" id="clearFormBtn">Limpiar</button>
+          </div>
+        </form>
+      </aside>
+
+      <section class="panel content">
+        <div class="topbar">
+          <span class="badge">Productos creados: <strong id="productCount">0</strong></span>
+          <span class="badge">Cupón activo: <strong>DESC50</strong></span>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div id="productsContainer" class="products-grid"></div>
+
+        <div id="emptyState" class="empty-state">
+          <div>
+            <h3>No hay productos todavía</h3>
+            <p>
+              Agrega tu primer producto usando el formulario de la izquierda.
+              La tarjeta aparecerá aquí automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <p class="footer-note">
+          Diseño responsive, interacción completa en pantalla y manipulación dinámica del DOM con JavaScript vanilla.
+        </p>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const productForm = document.getElementById('productForm');
+    const imageUrlInput = document.getElementById('imageUrl');
+    const titleInput = document.getElementById('title');
+    const descriptionInput = document.getElementById('description');
+    const priceInput = document.getElementById('price');
+    const couponInput = document.getElementById('coupon');
+    const clearFormBtn = document.getElementById('clearFormBtn');
+    const productsContainer = document.getElementById('productsContainer');
+    const emptyState = document.getElementById('emptyState');
+    const messageBox = document.getElementById('message');
+    const productCount = document.getElementById('productCount');
+
+    const validCoupon = 'DESC50';
+
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.className = 'message show ' + type;
+    }
+
+    function clearMessage() {
+      messageBox.textContent = '';
+      messageBox.className = 'message';
+    }
+
+    function formatPrice(value) {
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0
+      }).format(value);
+    }
+
+    function updateEmptyState() {
+      const hasProducts = productsContainer.children.length > 0;
+      emptyState.style.display = hasProducts ? 'none' : 'grid';
+      productCount.textContent = productsContainer.children.length;
+    }
+
+    function resetForm() {
+      productForm.reset();
+      imageUrlInput.focus();
+    }
+
+    function createProductCard(productData) {
+      const article = document.createElement('article');
+      article.className = 'product-card';
+
+      const image = document.createElement('img');
+      image.className = 'product-image';
+      image.src = productData.imageUrl;
+      image.alt = productData.title;
+      image.onerror = function () {
+        this.src = 'https://placehold.co/600x400/e2e8f0/334155?text=Imagen+no+disponible';
+      };
+
+      const body = document.createElement('div');
+      body.className = 'product-body';
+
+      const title = document.createElement('h3');
+      title.className = 'product-title';
+      title.textContent = productData.title;
+
+      const description = document.createElement('p');
+      description.className = 'product-description';
+      description.textContent = productData.description;
+
+      const priceBox = document.createElement('div');
+      priceBox.className = 'price-box';
+
+      if (productData.discountApplied) {
+        const oldPriceRow = document.createElement('div');
+        oldPriceRow.className = 'price-row';
+
+        const oldPriceLabel = document.createElement('span');
+        oldPriceLabel.textContent = 'Precio original';
+
+        const oldPriceValue = document.createElement('span');
+        oldPriceValue.className = 'old-price';
+        oldPriceValue.textContent = formatPrice(productData.originalPrice);
+
+        oldPriceRow.appendChild(oldPriceLabel);
+        oldPriceRow.appendChild(oldPriceValue);
+        priceBox.appendChild(oldPriceRow);
+      }
+
+      const finalPriceRow = document.createElement('div');
+      finalPriceRow.className = 'price-row';
+
+      const finalPriceLabel = document.createElement('span');
+      finalPriceLabel.textContent = 'Precio final';
+
+      const finalPriceValue = document.createElement('span');
+      finalPriceValue.className = 'final-price';
+      finalPriceValue.textContent = formatPrice(productData.finalPrice);
+
+      finalPriceRow.appendChild(finalPriceLabel);
+      finalPriceRow.appendChild(finalPriceValue);
+      priceBox.appendChild(finalPriceRow);
+
+      body.appendChild(title);
+      body.appendChild(description);
+
+      if (productData.discountApplied) {
+        const couponTag = document.createElement('span');
+        couponTag.className = 'coupon-tag';
+        couponTag.textContent = 'Cupón aplicado: ' + validCoupon;
+        body.appendChild(couponTag);
+      }
+
+      body.appendChild(priceBox);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'btn-danger';
+      deleteButton.textContent = 'Eliminar producto';
+      deleteButton.addEventListener('click', function () {
+        article.remove();
+        updateEmptyState();
+        showMessage('Producto eliminado correctamente.', 'success');
+      });
+
+      body.appendChild(deleteButton);
+
+      article.appendChild(image);
+      article.appendChild(body);
+
+      productsContainer.prepend(article);
+      updateEmptyState();
+    }
+
+    productForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearMessage();
+
+      const imageUrl = imageUrlInput.value.trim();
+      const title = titleInput.value.trim();
+      const description = descriptionInput.value.trim();
+      const price = Number(priceInput.value);
+      const coupon = couponInput.value.trim().toUpperCase();
+
+      if (!imageUrl || !title || !description || !priceInput.value || price < 0) {
+        showMessage('Completa todos los campos correctamente antes de guardar.', 'error');
+        return;
+      }
+
+      const discountApplied = coupon === validCoupon;
+      const finalPrice = discountApplied ? price * 0.5 : price;
+
+      createProductCard({
+        imageUrl: imageUrl,
+        title: title,
+        description: description,
+        originalPrice: price,
+        finalPrice: finalPrice,
+        discountApplied: discountApplied
+      });
+
+      if (discountApplied) {
+        showMessage('Producto creado con descuento del 50% aplicado.', 'success');
+      } else {
+        showMessage('Producto creado correctamente.', 'success');
+      }
+
+      resetForm();
+    });
+
+    clearFormBtn.addEventListener('click', function () {
+      resetForm();
+      clearMessage();
+    });
+
+    updateEmptyState();
+  </script>
+</body>
+</html>
